@@ -1,6 +1,6 @@
 import requests
 import json 
-from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions, Gpu, S3Object, Reference, File
+from model import Process, FuncSpec, Workflow, ProcessGraph, Conditions, Gpu, S3Object, Reference, File, PriorityUpdate, PriorityUpdateResult
 import base64
 from websocket import create_connection
 import inspect
@@ -333,6 +333,37 @@ class Colonies:
         }
 
         return self.__rpc(msg, prvkey)
+
+    def set_process_priorities(self, colonyname, updates, prvkey) -> list[PriorityUpdateResult]:
+        """The priority channel: one bulk, bounded update of the priority of
+        WAITING processes in a colony.
+
+        `updates` is a list of PriorityUpdate, or of plain dicts
+        [{"processid": str, "priority": int}].
+
+        Returns one PriorityUpdateResult per update, in request order. A process
+        that could not be moved is reported, not raised: outcome is one of
+        updated, not_waiting, not_found, rejected_out_of_bounds.
+
+        The signature is bulk-first on purpose. The application decays in
+        batches per decision cycle, and a per-process convenience wrapper
+        invites accidental N round-trips.
+        """
+        updates_json = []
+        for update in updates:
+            if isinstance(update, PriorityUpdate):
+                updates_json.append(update.model_dump(by_alias=True))
+            else:
+                updates_json.append(update)
+
+        msg = {
+            "msgtype": "setprocessprioritiesmsg",
+            "colonyname": colonyname,
+            "updates": updates_json
+        }
+
+        response = self.__rpc(msg, prvkey)
+        return [PriorityUpdateResult(**result) for result in response]
     
     def stats(self, colonyname, prvkey):
         msg = {

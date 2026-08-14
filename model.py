@@ -44,6 +44,29 @@ class FuncSpec(BaseModel):
     fs: Fs | None = Fs(mount="", snapshots=None, dirs=None)
     env: Dict[str, str] = {}
     channels: List[str] = []
+    # Bounds for priority-channel updates. None means unset: the floor then
+    # defaults to the minimum allowed priority and the ceiling to the priority
+    # the process was submitted with, so an unconfigured process can be decayed
+    # freely but never escalated above its original standing.
+    priorityfloor: Optional[int] = None
+    priorityceiling: Optional[int] = None
+
+
+class PriorityUpdate(BaseModel):
+    """One entry of a bulk priority-channel write."""
+    processid: str
+    priority: int
+
+
+class PriorityUpdateResult(BaseModel):
+    """Why a single update did or did not land.
+
+    outcome is one of: updated, not_waiting, not_found,
+    rejected_out_of_bounds. priority is the value in force after the call.
+    """
+    processid: str
+    outcome: str
+    priority: int = 0
 
 
 class Attribute(BaseModel):
