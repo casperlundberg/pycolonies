@@ -6,3 +6,9 @@ build
 .vscode
 libcryptolib.so
 libcfslib.so
+# setuptools build output. A committed build/lib/pycolonies.py shadowed the
+# real module: setuptools reuses build/lib when making the wheel, so pip
+# packaged a stale copy without the priority channel.
+build/
+dist/
+*.egg-info/
