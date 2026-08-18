@@ -1,10 +1,12 @@
 name: Python3
 
+# Was `branches: [ main ]`, inherited from upstream. The priority-channel work
+# is on a feature branch, so this had never run.
 on:
   push:
-    branches: [ main ]
+    branches: ['**']
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   runner-job:
@@ -34,7 +36,11 @@ jobs:
           # maps tcp port 5432 on service container to the host
           - 5432:5432
       colonies:
-        image: colonyos/colonies:v1.9.7
+        # MUST be the fork: upstream colonyos/colonies has no priority
+        # channel, so test/priority_channel_test.py could never have passed
+        # against the v1.9.7 image this used to name. Keep in step with
+        # helm/colonies-server/values.yaml in vikingvault-infrastructure.
+        image: ${{ vars.COLONIES_IMAGE || 'docker.io/cappelumpa/colonies:priority-channel-483e0e43' }}
         env:
             LANG: en_US.UTF-8
             LANGUAGE: en_US.UTF-8
